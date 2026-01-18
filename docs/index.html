@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Docks – Product Grid</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="docks-page">
+  <div class="container">
+    <h1>Dockingstations for conference rooms.</h1>
+    <p>Dockingstations that I HAVE tested and this i MY ranking, its a personal preference and 100% up to me, cannot be bought.<br>rankings can change on a daily basis due to new tests and discoveries.</p>
+    <div class="load-controls" style="margin-bottom:8px; display:flex; gap:8px; align-items:center;">
+      <!-- Local CSV controls removed: Load, Clear and CSV Editor -->
+      <button id="compareBtn" class="copy-btn">Compare</button>
+    </div>
+    <div id="docksGridContainer" class="docks-grid-container">
+      <div id="productGrid" class="product-grid"></div>
+    </div>
+  </div>
+
+    <!-- Loading modal for data fetch with retry -->
+    <div id="loadingModal" class="product-modal loading-modal" aria-hidden="true">
+      <div class="product-modal__backdrop"></div>
+      <div class="product-modal__dialog" role="dialog" aria-modal="true">
+        <header class="product-modal__header">
+          <div class="modal-title">Loading data</div>
+        </header>
+        <div class="product-modal__body" style="display:flex; gap:12px; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
+          <div class="modal-spinner" aria-hidden="true"></div>
+          <p id="loadingMessage">Fetching data from server… will retry every 3 seconds if unavailable.</p>
+          <div id="loadingAttempt" style="font-size:13px; color:#666; margin-top:6px;">Attempt: 0/5</div>
+          <div id="loadingCountdown" style="font-size:13px; color:#666; margin-top:4px;">Next attempt in: 0s</div>
+          <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+            <button id="loadingTryAgainBtn" class="copy-btn" style="display:none;">Reload page</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <div id="productModal" class="product-modal" aria-hidden="true">
+    <div class="product-modal__backdrop"></div>
+    <div class="product-modal__dialog" role="dialog" aria-modal="true">
+      <header class="product-modal__header">
+        <img id="modalBrandLogo" class="modal-brand-logo" alt="brand logo" src="" />
+        <div id="modalTitle" class="modal-title"></div>
+        <!-- removed modal close button as requested -->
+      </header>
+      <div class="product-modal__body">
+        <div class="modal-left">
+          <div id="modalImageWrapper" class="modal-image-wrapper">
+            <img id="modalImage" class="modal-image" alt="product image" src="" />
+          </div>
+          <div id="modalImageThumbs" class="modal-image-thumbs" aria-hidden="true"></div>
+        </div>
+        <div id="modalSpecs" class="modal-specs"></div>
+      </div>
+      <div id="modalFullWidthDetails" class="modal-fullwidth">
+        <div id="modalLeftDetails" class="modal-left-details"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSV Editor modal removed -->
+
+  <!-- Field editor modal (overlay for editing large textfields or long links) -->
+  <div id="fieldEditorModal" class="product-modal field-editor-modal" aria-hidden="true">
+    <div class="product-modal__backdrop"></div>
+    <div class="product-modal__dialog" role="dialog" aria-modal="true" style="max-width:900px; width: 90%;">
+      <header class="product-modal__header">
+        <div id="fieldEditorTitle" class="modal-title">Edit Field</div>
+        <button id="fieldEditorCloseBtn" class="modal-close-btn" aria-label="Close">✕</button>
+      </header>
+      <div class="product-modal__body" style="padding:12px; display:block;">
+        <div style="margin-bottom:8px;">
+          <label id="fieldEditorLabel" style="font-weight:600;">Field</label>
+        </div>
+        <div>
+          <textarea id="fieldEditorTextarea" style="width:100%; height:300px; display:none;" aria-label="Edit value"></textarea>
+          <input id="fieldEditorInput" style="width:100%; height:40px; display:none;" aria-label="Edit value" />
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; padding:12px;">
+        <button id="fieldEditorCancel" class="close-dialog-btn">Cancel</button>
+        <button id="fieldEditorSave" class="copy-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../docks.js" defer></script>
+</body>
+</html>

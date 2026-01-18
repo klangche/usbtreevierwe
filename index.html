@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Linus USB Tree Viewer</title>
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="icon" href="icons/icon-512.png" type="image/png" sizes="512x512">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="theme-color" content="#000000">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Linus USB Tree Viewer</h1>
+
+    <p>Select your platform and paste terminal output to visualize your USB device hierarchy and troubleshoot connection issues.</p>
+
+    <label for="platform">Choose platform:</label>
+    <select id="platform">
+      <option value="">-- Select your operating system --</option>
+      <option value="windows">Windows Intel/AMD</option>
+      <option value="mac">Mac Intel/Apple Silicon</option>
+      <option value="linux">Linux</option>
+    </select>
+
+    <div class="script-display" id="scriptArea"></div>
+    <div class="script-buttons" id="scriptButtons">
+      <button class="copy-script-btn split-width" onclick="copyScript()" id="copyScriptButton">Copy Script</button>
+      <button class="no-admin-btn" onclick="copyNoAdminScript()" id="noAdminButton">No admin script</button>
+    </div>
+    
+    <div class="instruction" id="instruction"></div>
+
+    <div id="platformLimits" class="platform-limits"></div>
+
+    <div class="output">
+      <h2 id="summaryHeader">USB Summary:</h2>
+      <div id="summaryOutput" class="summary"></div>
+      
+      <h2 id="graphHeader">USB Graphical View:</h2>
+      <div id="graphExplanation" class="graph-explanation">This shows how your USB devices are connected. <b>[HUB]</b> connects multiple devices, <b>[DEVICE]</b> is a single device. <b>Yellow</b> means unstable (may fail), <b>red</b> means not working (likely broken). Virtual / built-in hubs are shown in orange <i>(Virtual hub)</i> and are not counted when calculating stability — tier counts are calculated from the physical port. Move devices to a hub closer to the computer to fix issues.</div>
+      <div id="graphOutput" class="graph"></div>
+      <h2 id="treeHeader">USB Device Tree:</h2>
+      <div id="treeOutput" class="tree"></div>
+    </div>
+
+    <div id="resultInputContainer" style="margin-top: 10px;">
+      <h2>Paste terminal output:</h2>
+      <textarea id="resultInput" placeholder="Select platform or paste data directly here:"></textarea>
+    </div>
+
+    <textarea id="windowsScript" class="hidden-script">Start-Process PowerShell -ArgumentList '-NoProfile -Command', '$out = "$env:TEMP\usb_treeview.txt"; '''' | Out-File $out; $devices = Get-PnpDevice -Class USB | Select-Object InstanceId,@{n=''Name'';e={$_.FriendlyName -or $_.Name}}; $map = @{}; foreach ($d in $devices) { try { $reg = Get-ItemProperty -ErrorAction SilentlyContinue (''HKLM:\SYSTEM\CurrentControlSet\Enum\'' + $d.InstanceId); $parent = $null; if ($reg -and $reg.ParentIdPrefix) { $parent = $reg.ParentIdPrefix }; $map[$d.InstanceId] = @{ Name=$d.Name; Parent=$parent } } catch {} }; function Print-Node($id,$lvl){ $ind = '' '' * ($lvl*2); $name = $map[$id].Name; "$ind- $name ($id)" | Out-File $out -Append; $kids = $map.Keys | Where-Object { $map[$_].Parent -and $id -like (''*'' + $map[$_].Parent + ''*'') }; foreach ($c in $kids){ Print-Node $c ($lvl+1) } }; foreach ($id in $map.Keys){ if (-not $map[$id].Parent){ Print-Node $id 0 } }; notepad $out' -Verb RunAs</textarea>
+    
+    <textarea id="windowsNoAdminScript" class="hidden-script">$out="$env:TEMP\usb_treeview.txt";''|Out-File $out;$devices=Get-PnpDevice -Class USB|Where-Object{$_.Status -eq 'OK'}|Select-Object InstanceId,@{n='Name';e={$_.FriendlyName -or $_.Name}};$map=@{};foreach($d in $devices){try{$reg=Get-ItemProperty -ErrorAction SilentlyContinue("HKLM:\SYSTEM\CurrentControlSet\Enum\"+$d.InstanceId);$parent=$null;if($reg -and $reg.ParentIdPrefix){$parent=$reg.ParentIdPrefix};$map[$d.InstanceId]=@{Name=$d.Name;Parent=$parent}}catch{}};function Print-Node($id,$lvl){$ind=' '*($lvl*2);$name=$map[$id].Name;"$ind- $name ($id)"|Out-File $out -Append;$kids=$map.Keys|Where-Object{$map[$_].Parent -and $id -like('*'+$map[$_].Parent+'*')};foreach($c in $kids){Print-Node $c ($lvl+1)}};foreach($id in $map.Keys){if(-not $map[$id].Parent){Print-Node $id 0}};notepad $out</textarea>
+    
+    <textarea id="macScript" class="hidden-script">sudo ioreg -p IOUSB</textarea>
+    
+    <textarea id="linuxScript" class="hidden-script">sudo lsusb -t</textarea>
+
+    <div id="usb-reset-section">
+      <div class="reset-container">
+        <button class="clear-btn" onclick="clearAll()">Clear / Reset</button>
+        <button class="support-btn" onclick="toggleWarning()" id="supportButton">Support</button>
+          <div style="margin-top:8px; text-align:center;">
+            <a href="#" id="pageDataLink" class="page-data-link" onclick="openPageDataDialog(); return false;">
+              <span class="page-data-icon">
+                <svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
+                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 6c0 1.657-3.134 3-7 3S5 7.657 5 6m14 0c0-1.657-3.134-3-7-3S5 4.343 5 6m14 0v6M5 6v6m0 0c0 1.657 3.134 3 7 3s7-1.343 7-3M5 12v6c0 1.657 3.134 3 7 3s7-1.343 7-3v-6"/>
+                </svg>
+              </span>
+              <span class="page-data-text">CSV file - site data</span>
+            </a>
+          </div>
+        <div class="warning" id="warning">
+          <h2>Warning and Usage Instructions</h2>
+          
+          <p><b>These scripts are meant strictly for troubleshooting purposes.</b></p>
+          <p>They will temporarily disable and re-enable USB hubs and devices, including USB storage drives.</p>
+
+          <p>Running these scripts may also disconnect keyboards, mice, network, audio devices, or other peripherals until they are reinitialized by the system.</p>
+
+          <p><b>Always run with the required privileges:</b></p>
+          <div class="privileges">
+            Windows (run as Administrator in PowerShell)<br>
+            Mac (sudo privileges in Terminal)<br>
+            Linux (sudo privileges in Terminal)
+          </div>
+
+          <p>After running the script:</p>
+          <p><b>USB devices should be physically disconnected and reconnected to ensure a proper reset.<br>
+          This is very important!</b></p>
+
+          <p><b>Use at your own risk</b>, since incorrect usage may cause instability, data loss, or require a system restart.</p>
+          
+          <div class="os-buttons">
+            <button class="os-btn" onclick="showScript('Windows')">Windows Reset Script</button>
+            <button class="os-btn" onclick="showScript('Mac')">Mac Reset Script</button>
+            <button class="os-btn" onclick="showScript('Linux')">Linux Reset Script</button>
+          </div>
+        </div>
+      </div>
+      <div class="dialog" id="scriptDialog">
+        <h2 id="dialogTitle"></h2>
+        <div class="subtitle" id="dialogSubtitle">Below is the script for USB reset troubleshooting:</div>
+        <pre id="scriptContent"></pre>
+        <div class="dialog-buttons">
+          <button class="copy-btn" onclick="copyDialogScript()">Copy</button>
+          <button class="close-dialog-btn" onclick="closeDialog()">Close</button>
+        </div>
+      </div>
+      <div class="dialog" id="pageDataDialog" style="display:none;">
+        <h2>Page Data</h2>
+        <div id="pageDataContent" style="margin-top: 10px; overflow:auto;"></div>
+        <div style="margin-top:10px; display:flex; gap:10px;">
+          <button class="copy-btn" onclick="downloadPageDataCSV()">Download CSV</button>
+          <button class="close-dialog-btn" onclick="closePageDataDialog()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="credits">
+      <div class="inspiration">
+        <p>Inspired by the legendary Uwe Sieber and his USB Device Tree Viewer:</p>
+        <p><a href="https://www.uwe-sieber.de/usbtreeview_e.html" target="_blank">https://www.uwe-sieber.de/usbtreeview_e.html</a></p>
+      </div>
+
+      <div class="footer">
+        <p><a href="https://paypal.me/klangche?country.x=SE&locale.x=en_US" target="_blank">buy me a bottle of wine, lunch or a new computer ;)</a></p>
+        <p>By Linus Klang <span>🇸🇪</span></p>
+        <div class="version-number"></div>
+      </div>
+    </div>
+  </div>
+  <div id="csvIndicator" class="csv-indicator csv-yellow" role="status" aria-live="polite">
+    <span id="csvPlatformIcon" class="csv-platform-icon" aria-hidden="true"></span>
+    <span id="csvStatusIcon" class="csv-status-icon" aria-hidden="true"></span>
+    <span id="csvStatusText" class="csv-text">CSV could not load, using backup data.</span>
+    <button id="reloadCsvButton" class="csv-reload-btn" title="Reload CSV data" aria-label="Reload CSV data" onclick="reloadPageData(); return false;">
+      <!-- Refresh icon (reload CSV) -->
+      <svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.651 7.65a7.131 7.131 0 0 0-12.68 3.15M18.001 4v4h-4m-7.652 8.35a7.13 7.13 0 0 0 12.68-3.15M6 20v-4h4"/>
+      </svg>
+    </button>
+  </div>
+  <div id="floatingHint" class="floating-hint" aria-hidden="true">
+    <h3 id="floatingHintTitle"></h3>
+    <div id="floatingHintContent"></div>
+  </div>
+</body>
+</html>
